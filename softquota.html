@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Soft Quota Calculator</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 600px;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    input {
+      width: 80px;
+      padding: 4px;
+    }
+
+    .btn {
+      margin-top: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      background: #007bff;
+      color: #fff;
+      border: none;
+    }
+
+    .result {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Soft Quota Calculator</h2>
+
+<label>Total Quota: </label>
+<input type="number" id="totalQuota" value="">
+
+<br><br>
+
+<table id="quotaTable">
+  <thead>
+    <tr>
+      <th>Cell</th>
+      <th>Min</th>
+      <th>Current</th>
+      <th>Max (Auto)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Male</td>
+      <td><input type="number" class="min" value="100"></td>
+      <td><input type="number" class="current" value="0"></td>
+      <td class="max">-</td>
+    </tr>
+    <tr>
+      <td>Female</td>
+      <td><input type="number" class="min" value="100"></td>
+      <td><input type="number" class="current" value="0"></td>
+      <td class="max">-</td>
+    </tr>
+  </tbody>
+</table>
+
+<button class="btn" id="addRow">+ Add Cell</button>
+<button class="btn" id="calculate">Calculate</button>
+
+<div class="result" id="summary"></div>
+
+---
+
+<script>
+$(function () {
+
+  // Add new row
+  $("#addRow").click(function () {
+    $("#quotaTable tbody").append(`
+      <tr>
+        <td>New Cell</td>
+        <td><input type="number" class="min" value="0"></td>
+        <td><input type="number" class="current" value="0"></td>
+        <td class="max">-</td>
+      </tr>
+    `);
+  });
+
+  $("#calculate").click(function () {
+
+    let totalQuota = parseInt($("#totalQuota").val()) || 0;
+
+    let mins = [];
+    let currents = [];
+
+    $("#quotaTable tbody tr").each(function () {
+      let min = parseInt($(this).find(".min").val()) || 0;
+      let current = parseInt($(this).find(".current").val()) || 0;
+
+      mins.push(min);
+      currents.push(current);
+    });
+
+    let totalMin = mins.reduce((a, b) => a + b, 0);
+    let float = totalQuota - totalMin
+
+    if (float < 0) {
+      $("#summary").text("❌ Total quota is less than total minimum!");
+      return;
+    }
+
+    // calculate extra used
+    let extraUsed = currents.map((val, i) => Math.max(0, val - mins[i]));
+    let totalExtraUsed = extraUsed.reduce((a, b) => a + b, 0);
+
+    // update each row
+    $("#quotaTable tbody tr").each(function (index) {
+
+      let min = mins[index];
+      let max = min + float - (totalExtraUsed - extraUsed[index]);
+
+      $(this).find(".max").text(max);
+
+    });
+
+    $("#summary").html(`
+      Total Min: ${totalMin} <br>
+      Float: ${float} <br>
+      Extra Used: ${totalExtraUsed}
+    `);
+
+  });
+
+});
+</script>
+
+</body>
+</html>
